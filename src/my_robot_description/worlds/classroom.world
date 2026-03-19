@@ -1,0 +1,248 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="classroom">
+
+    <!-- ========================== PHYSICS ========================== -->
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- ========================== LIGHT ========================== -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- ========================== GROUND PLANE ========================== -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- ========================================================================
+         CLASSROOM: 10m x 8m room
+         Origin at centre (0,0).  Walls extend from (-5,-4) to (5,4).
+         Wall thickness = 0.15 m,  Wall height = 2.5 m
+    ======================================================================== -->
+
+    <!-- ── North Wall (y = +4) ── -->
+    <model name="wall_north">
+      <static>true</static>
+      <pose>0 4.075 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>10.3 0.15 2.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>10.3 0.15 2.5</size></box></geometry>
+          <material>
+            <ambient>0.8 0.8 0.75 1</ambient>
+            <diffuse>0.8 0.8 0.75 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── South Wall (y = -4) ── -->
+    <model name="wall_south">
+      <static>true</static>
+      <pose>0 -4.075 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>10.3 0.15 2.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>10.3 0.15 2.5</size></box></geometry>
+          <material>
+            <ambient>0.8 0.8 0.75 1</ambient>
+            <diffuse>0.8 0.8 0.75 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── East Wall (x = +5) ── -->
+    <model name="wall_east">
+      <static>true</static>
+      <pose>5.075 0 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.15 8.0 2.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.15 8.0 2.5</size></box></geometry>
+          <material>
+            <ambient>0.8 0.8 0.75 1</ambient>
+            <diffuse>0.8 0.8 0.75 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── West Wall (x = -5) ── -->
+    <model name="wall_west">
+      <static>true</static>
+      <pose>-5.075 0 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.15 8.0 2.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.15 8.0 2.5</size></box></geometry>
+          <material>
+            <ambient>0.8 0.8 0.75 1</ambient>
+            <diffuse>0.8 0.8 0.75 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ========================== FLOOR ========================== -->
+    <model name="floor">
+      <static>true</static>
+      <pose>0 0 0.001 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>10 8 0.002</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>10 8 0.002</size></box></geometry>
+          <material>
+            <ambient>0.9 0.9 0.85 1</ambient>
+            <diffuse>0.9 0.9 0.85 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ========================================================================
+         DESKS  (6 desks arranged in 2 rows of 3)
+         Each desk: 1.2m x 0.6m x 0.75m (brown wooden look)
+    ======================================================================== -->
+
+    <!-- Row 1 (y = +1.5) -->
+    <model name="desk_1">
+      <static>true</static>
+      <pose>-3.0 1.5 0.375 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material>
+            <ambient>0.55 0.35 0.15 1</ambient>
+            <diffuse>0.55 0.35 0.15 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="desk_2">
+      <static>true</static>
+      <pose>0.0 1.5 0.375 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material>
+            <ambient>0.55 0.35 0.15 1</ambient>
+            <diffuse>0.55 0.35 0.15 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="desk_3">
+      <static>true</static>
+      <pose>3.0 1.5 0.375 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material>
+            <ambient>0.55 0.35 0.15 1</ambient>
+            <diffuse>0.55 0.35 0.15 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Row 2 (y = -1.5) -->
+    <model name="desk_4">
+      <static>true</static>
+      <pose>-3.0 -1.5 0.375 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material>
+            <ambient>0.55 0.35 0.15 1</ambient>
+            <diffuse>0.55 0.35 0.15 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="desk_5">
+      <static>true</static>
+      <pose>0.0 -1.5 0.375 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material>
+            <ambient>0.55 0.35 0.15 1</ambient>
+            <diffuse>0.55 0.35 0.15 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="desk_6">
+      <static>true</static>
+      <pose>3.0 -1.5 0.375 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material>
+            <ambient>0.55 0.35 0.15 1</ambient>
+            <diffuse>0.55 0.35 0.15 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ========================================================================
+         BOOKSHELF  (against east wall)
+         1.5m wide x 0.4m deep x 1.8m tall  (dark brown)
+    ======================================================================== -->
+    <model name="bookshelf">
+      <static>true</static>
+      <pose>4.7 -2.5 0.9 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.4 1.5 1.8</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.4 1.5 1.8</size></box></geometry>
+          <material>
+            <ambient>0.35 0.2 0.08 1</ambient>
+            <diffuse>0.35 0.2 0.08 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>
