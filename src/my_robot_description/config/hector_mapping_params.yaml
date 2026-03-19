@@ -4,8 +4,8 @@
 hector_mapping:
   ros__parameters:
     # --- Frame Configuration ---
-    base_frame: "base_link"
-    odom_frame: "base_link"          # Same as base_frame → SLAM without odometry
+    base_frame: "base_footprint"
+    odom_frame: "base_footprint"       # Same as base_frame → SLAM without odometry
     map_frame: "map"
 
     # --- Map Update Thresholds ---

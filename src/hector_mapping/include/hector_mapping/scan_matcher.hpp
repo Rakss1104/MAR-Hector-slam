@@ -34,7 +34,6 @@ public:
                       const std::vector<Eigen::Vector2d> & endpoints,
                       int iterations = 20);
 
-private:
   /** Transform a local-frame point by pose (x, y, theta). */
   static Eigen::Vector2d transformPoint(const Eigen::Vector3d & pose,
                                         const Eigen::Vector2d & pt);
