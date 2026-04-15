@@ -59,13 +59,9 @@ sudo apt update && sudo apt install -y \
 
 ```bash
 cd ~/ros2_hector_ws/src
-git clone -b ros2 https://github.com/tu-darmstadt-ros-pkg/hector_slam.git
+git clone https://github.com/Rakss1104/MAR-Hector-slam.git
 ```
 
-> **Fallback:** If the `ros2` branch is unavailable, use a community fork:
-> ```bash
-> git clone https://github.com/macstepien/hector_slam_ros2.git hector_slam
-> ```
 
 ### 2. Install remaining dependencies
 
