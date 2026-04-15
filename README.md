@@ -59,8 +59,7 @@ sudo apt update && sudo apt install -y \
 
 ```bash
 cd ~/ros2_hector_ws/src
-git clone https://github.com/Rakss1104/MAR-Hector-slam.git
-```
+git clone -b ros2 https://github.com/tu-darmstadt-ros-pkg/hector_slam.git```
 
 
 ### 2. Install remaining dependencies
