@@ -18,6 +18,9 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 
 #include "hector_mapping/occupancy_grid_map.hpp"
@@ -53,6 +56,14 @@ public:
     this->declare_parameter("scan_topic",          "/scan");
     this->declare_parameter("map_topic",           "/map");
     this->declare_parameter("map_multi_res_levels", 3);
+    this->declare_parameter("scan_matcher_translation_weight", 6.0);
+    this->declare_parameter("scan_matcher_rotation_weight", 5.0);
+    this->declare_parameter("scan_matcher_iterations", 8);
+    this->declare_parameter("scan_matcher_covariance_scale", 0.1);
+    this->declare_parameter("map_reset_distance", 100.0);
+    this->declare_parameter("sys_msg_in_window", 5);
+    this->declare_parameter("use_response_scan", true);
+    this->declare_parameter("use_tf_scan_transformation", true);
 
     base_frame_  = this->get_parameter("base_frame").as_string();
     odom_frame_  = this->get_parameter("odom_frame").as_string();
@@ -75,6 +86,14 @@ public:
     double map_pub_period   = this->get_parameter("map_pub_period").as_double();
 
     int multi_res = this->get_parameter("map_multi_res_levels").as_int();
+    translation_weight_ = this->get_parameter("scan_matcher_translation_weight").as_double();
+    rotation_weight_ = this->get_parameter("scan_matcher_rotation_weight").as_double();
+    scan_matcher_iterations_ = this->get_parameter("scan_matcher_iterations").as_int();
+    covariance_scale_ = this->get_parameter("scan_matcher_covariance_scale").as_double();
+    map_reset_distance_ = this->get_parameter("map_reset_distance").as_double();
+    sys_msg_window_ = this->get_parameter("sys_msg_in_window").as_int();
+    use_response_scan_ = this->get_parameter("use_response_scan").as_bool();
+    use_tf_scan_transformation_ = this->get_parameter("use_tf_scan_transformation").as_bool();
 
     // ── Build multi-resolution maps ──────────────────────────────
     // Level 0 = finest (original resolution).
@@ -91,6 +110,8 @@ public:
 
     // ── ROS 2 plumbing ──────────────────────────────────────────
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+    tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
 
     rclcpp::QoS scan_qos(10);
     scan_qos.best_effort();
@@ -115,39 +136,81 @@ private:
   // ── Scan callback ──────────────────────────────────────────────
   void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
   {
-    // Convert LaserScan → local-frame endpoints (filter by range)
+    // ── 1. Transform LaserScan → base_frame endpoints ───────────
     std::vector<Eigen::Vector2d> endpoints;
     endpoints.reserve(msg->ranges.size());
-    double angle = msg->angle_min;
-    for (size_t i = 0; i < msg->ranges.size(); ++i, angle += msg->angle_increment) {
-      double r = msg->ranges[i];
-      if (!std::isfinite(r) || r < laser_min_ || r > laser_max_) continue;
-      endpoints.emplace_back(r * std::cos(angle), r * std::sin(angle));
+    Eigen::Vector2d sensor_base(0.0, 0.0);
+
+    if (use_tf_scan_transformation_) {
+      // Transform each point from sensor frame to base_frame using TF
+      geometry_msgs::msg::TransformStamped sensor_to_base;
+      try {
+        sensor_to_base = tf_buffer_->lookupTransform(
+            base_frame_, msg->header.frame_id, msg->header.stamp, 100ms);
+      } catch (const tf2::TransformException & ex) {
+        RCLCPP_WARN(this->get_logger(), "TF lookup failed: %s", ex.what());
+        return;
+      }
+
+      // Record sensor origin in base_link frame
+      sensor_base.x() = sensor_to_base.transform.translation.x;
+      sensor_base.y() = sensor_to_base.transform.translation.y;
+
+      double angle = msg->angle_min;
+      for (size_t i = 0; i < msg->ranges.size(); ++i, angle += msg->angle_increment) {
+        double r = msg->ranges[i];
+        if (!std::isfinite(r) || r < laser_min_ || r > laser_max_) continue;
+
+        // Point in sensor frame
+        geometry_msgs::msg::PointStamped ps_sensor, ps_base;
+        ps_sensor.header = msg->header;
+        ps_sensor.point.x = r * std::cos(angle);
+        ps_sensor.point.y = r * std::sin(angle);
+        ps_sensor.point.z = 0.0;
+
+        tf2::doTransform(ps_sensor, ps_base, sensor_to_base);
+        endpoints.emplace_back(ps_base.point.x, ps_base.point.y);
+      }
+    } else {
+      // Use raw points (assumes sensor is at base_frame origin)
+      double angle = msg->angle_min;
+      for (size_t i = 0; i < msg->ranges.size(); ++i, angle += msg->angle_increment) {
+        double r = msg->ranges[i];
+        if (!std::isfinite(r) || r < laser_min_ || r > laser_max_) continue;
+        endpoints.emplace_back(r * std::cos(angle), r * std::sin(angle));
+      }
     }
+
     if (endpoints.size() < 10) return;     // not enough valid points
 
-    // ── Multi-resolution scan matching ───────────────────────
-    // Match coarse-to-fine for robustness.
+    // ── 2. Multi-resolution scan matching ───────────────────────
     Eigen::Vector3d new_pose = pose_;
     for (int l = static_cast<int>(maps_.size()) - 1; l >= 0; --l) {
-      ScanMatcher::match(new_pose, *maps_[l], endpoints, 20);
+      ScanMatcher::match(new_pose, *maps_[l], endpoints, scan_matcher_iterations_, translation_weight_, rotation_weight_, covariance_scale_);
+    }
+
+    // ── 3. Prevent pose jumps / Check consistency ───────────────
+    double jump = (new_pose.head<2>() - pose_.head<2>()).norm();
+    if (!first_scan_ && jump > map_reset_distance_) {
+      RCLCPP_WARN(this->get_logger(), "Large pose jump detected (%.2f m) — ignoring scan.", jump);
+      return;
     }
     pose_ = new_pose;
 
-    // ── Check if map should be updated ───────────────────────
+    // ── 4. Check if map should be updated ───────────────────────
     Eigen::Vector2d d = pose_.head<2>() - last_update_pose_.head<2>();
     double da = std::abs(pose_.z() - last_update_pose_.z());
     if (first_scan_ || d.norm() > dist_thresh_ || da > angle_thresh_) {
       first_scan_ = false;
       last_update_pose_ = pose_;
 
-      // Compute world-frame endpoints
+      // Compute world-frame endpoints and sensor origin
       std::vector<Eigen::Vector2d> world_pts;
       world_pts.reserve(endpoints.size());
       for (auto & pt : endpoints) {
         world_pts.push_back(ScanMatcher::transformPoint(pose_, pt));
       }
-      Eigen::Vector2d sensor_world(pose_.x(), pose_.y());
+      Eigen::Vector2d sensor_world = ScanMatcher::transformPoint(pose_, sensor_base);
 
       // Update every resolution level
       for (auto & m : maps_) {
@@ -215,11 +278,20 @@ private:
   double dist_thresh_, angle_thresh_;
   double laser_min_, laser_max_;
   bool pub_tf_;
+  double translation_weight_, rotation_weight_;
+  int scan_matcher_iterations_;
+  double covariance_scale_;
+  double map_reset_distance_;
+  int sys_msg_window_;
+  bool use_response_scan_;
+  bool use_tf_scan_transformation_;
 
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_sub_;
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr    map_pub_;
   rclcpp::TimerBase::SharedPtr                                  map_timer_;
   std::unique_ptr<tf2_ros::TransformBroadcaster>                tf_broadcaster_;
+  std::unique_ptr<tf2_ros::Buffer>                               tf_buffer_;
+  std::unique_ptr<tf2_ros::TransformListener>                   tf_listener_;
 };
 
 }  // namespace hector_mapping

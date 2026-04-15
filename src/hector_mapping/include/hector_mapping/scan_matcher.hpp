@@ -27,12 +27,17 @@ public:
    * @param map           the occupancy grid to match against
    * @param endpoints     scan endpoints in the sensor's local frame
    * @param iterations    max Gauss-Newton iterations (default 20)
+   * @param translation_weight  weight for translation updates (default 1.0)
+   * @param rotation_weight     weight for rotation updates (default 1.0)
    * @return              final sum of matched probabilities
    */
   static double match(Eigen::Vector3d & pose,
                       const OccupancyGridMap & map,
                       const std::vector<Eigen::Vector2d> & endpoints,
-                      int iterations = 20);
+                      int iterations = 20,
+                      double translation_weight = 1.0,
+                      double rotation_weight = 1.0,
+                      double covariance_scale = 1.0);
 
   /** Transform a local-frame point by pose (x, y, theta). */
   static Eigen::Vector2d transformPoint(const Eigen::Vector3d & pose,

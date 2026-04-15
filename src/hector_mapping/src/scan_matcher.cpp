@@ -17,7 +17,10 @@ double ScanMatcher::match(
     Eigen::Vector3d & pose,
     const OccupancyGridMap & map,
     const std::vector<Eigen::Vector2d> & endpoints,
-    int iterations)
+    int iterations,
+    double translation_weight,
+    double rotation_weight,
+    double covariance_scale)
 {
   if (endpoints.empty()) return 0.0;
 
@@ -53,14 +56,37 @@ double ScanMatcher::match(
       J(2) = dMdx * dth_x + dMdy * dth_y;
 
       double residual = 1.0 - M;   // we want M → 1 for occupied cells
+      
+      // Apply weights as Tikhonov regularization or scaling
       H += J * J.transpose();
       g += J * residual;
     }
 
+    // Apply weights to the updates
+    H(0,0) *= translation_weight;
+    H(1,1) *= translation_weight;
+    H(2,2) *= rotation_weight;
+
+    // Apply covariance scaling for stability
+    H *= covariance_scale;
+    g *= covariance_scale;
+    
     // Damping for numerical stability
-    H.diagonal().array() += 1e-6;
+    H.diagonal().array() += 1e-3;
 
     Eigen::Vector3d delta = H.ldlt().solve(g);
+    
+    // Limit pose updates to prevent large jumps within iterations
+    // but keep them reasonable for motion tracking
+    double max_translation = 0.5;  // 50cm max per iteration
+    double max_rotation = 0.3;    // ~17 degrees max per iteration
+    
+    if (delta.head<2>().norm() > max_translation) {
+      delta.head<2>() = delta.head<2>().normalized() * max_translation;
+    }
+    if (std::abs(delta.z()) > max_rotation) {
+      delta.z() = (delta.z() > 0) ? max_rotation : -max_rotation;
+    }
 
     // Apply update
     pose += delta;

@@ -29,8 +29,10 @@ OccupancyGridMap::OccupancyGridMap(
   log_occ_(logOddsFromProb(update_occ)),
   log_odds_(map_size * map_size, 0.0)
 {
-  origin_x_ = -(start_x * map_size * resolution);
-  origin_y_ = -(start_y * map_size * resolution);
+  // Center the map on world origin (0,0) with robot starting at center
+  double half_map_size_meters = map_size * resolution * 0.5;
+  origin_x_ = -half_map_size_meters;
+  origin_y_ = -half_map_size_meters;
 }
 
 // ─── coordinate conversions ─────────────────────────────────────────────

@@ -4,20 +4,20 @@
 hector_mapping:
   ros__parameters:
     # --- Frame Configuration ---
-    base_frame: "base_footprint"
-    odom_frame: "base_footprint"       # Same as base_frame → SLAM without odometry
+    base_frame: "base_footprint"      # The robot base frame (ground-level root)
+    odom_frame: "odom"                # Gazebo diff drive publishes odom -> base_footprint
     map_frame: "map"
 
     # --- Map Update Thresholds ---
-    map_update_distance_thresh: 0.1  # metres moved before map update
-    map_update_angle_thresh: 0.04    # radians rotated before map update
+    map_update_distance_thresh: 0.4  # metres moved before map update
+    map_update_angle_thresh: 0.2    # radians rotated before map update
 
     # --- Map Parameters ---
     map_resolution: 0.05             # metres per grid cell
     map_size: 2048                   # grid cells (2048 × 2048)
     map_start_x: 0.5                 # map origin normalised [0,1]
     map_start_y: 0.5
-    map_multi_res_levels: 3
+    map_multi_res_levels: 1
 
     # --- Scan Parameters ---
     laser_min_dist: 0.1
@@ -26,11 +26,11 @@ hector_mapping:
     laser_z_max_value: 1.0
 
     # --- Update Behaviour ---
-    update_factor_free: 0.4
-    update_factor_occupied: 0.9
+    update_factor_free: 0.4              # Reverted to default for better map cleanup
+    update_factor_occupied: 0.9          # Reverted to default for better solid walls
 
     # --- TF Publishing ---
-    pub_map_odom_transform: true
+    pub_map_odom_transform: true     # REQUIRED to stabilize robot in map frame
     pub_map_scanmatch_transform: false
     tf_map_scanmatch_transform_frame_name: "scanmatcher_frame"
 
@@ -38,7 +38,19 @@ hector_mapping:
     scan_subscriber_queue_size: 5
     use_tf_scan_transformation: true
     use_tf_pose_start_estimate: false
-    map_pub_period: 1.0              # seconds between /map publications
+    map_pub_period: 0.5              # More frequent map publishing
+    
+    # --- Scan Matching Weights for Stability ---
+    scan_matcher_translation_weight: 1.0 # Reset to 1.0 with new implementation
+    scan_matcher_rotation_weight: 1.0
+    
+    # --- Additional Stability Parameters ---
+    scan_matcher_iterations: 10          # Sufficient iterations for convergence
+    scan_matcher_covariance_scale: 1.0   # Full scale for better matching
+    
+    # --- Map Consistency Parameters ---
+    map_update_distance_thresh: 0.1     # Lower threshold for smoother in-place updates
+    map_update_angle_thresh: 0.05       # Lower threshold for smoother in-place updates
 
     # --- Topic Names ---
     scan_topic: "/scan"

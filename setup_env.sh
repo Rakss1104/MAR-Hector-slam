@@ -5,7 +5,7 @@
 #   source setup_env.sh
 # =============================================================================
 
-export DISPLAY=:0
+# export DISPLAY=:0
 export LIBGL_ALWAYS_INDIRECT=0
 export MESA_GL_VERSION_OVERRIDE=3.3
 

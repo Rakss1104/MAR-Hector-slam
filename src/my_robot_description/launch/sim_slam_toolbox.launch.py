@@ -1,14 +1,15 @@
 """
-sim_hector.launch.py
+sim_slam_toolbox.launch.py
 ====================
-Launch file for Hector SLAM simulation with Gazebo.
+Launch file for SLAM Toolbox simulation with Gazebo.
 
 Launches:
   1. Gazebo server + client with the classroom world
   2. robot_state_publisher (loads URDF)
-  3. spawn_entity (places robot at origin)
-  4. hector_mapping node (with custom parameters)
-  5. RViz2 (with pre-configured display)
+  3. joint_state_publisher
+  4. spawn_entity (places robot at origin)
+  5. slam_toolbox node (with loop closure)
+  6. RViz2 (with pre-configured display)
 """
 
 import os
@@ -35,7 +36,7 @@ def generate_launch_description():
     urdf_file = os.path.join(pkg_share, "urdf", "diff_drive_robot.urdf.xacro")
     world_file = os.path.join(pkg_share, "worlds", "classroom.world")
     rviz_config = os.path.join(pkg_share, "rviz", "hector_slam.rviz")
-    hector_params = os.path.join(pkg_share, "config", "hector_mapping_params.yaml")
+    slam_params = os.path.join(pkg_share, "config", "slam_toolbox_params.yaml")
 
     # ── Process xacro → URDF string ───────────────────────────────────
     robot_description_raw = xacro.process_file(urdf_file).toxml()
@@ -95,14 +96,14 @@ def generate_launch_description():
         ],
     )
 
-    # ── 4. Hector Mapping ─────────────────────────────────────────────
-    hector_mapping = Node(
-        package="hector_mapping",
-        executable="hector_mapping",
-        name="hector_mapping",
+    # ── 4. SLAM Toolbox ─────────────────────────────────────────────
+    slam_toolbox = Node(
+        package="slam_toolbox",
+        executable="async_slam_toolbox_node",
+        name="slam_toolbox",
         output="screen",
         parameters=[
-            hector_params,
+            slam_params,
             {"use_sim_time": use_sim_time},
         ],
     )
@@ -125,7 +126,7 @@ def generate_launch_description():
             robot_state_publisher,
             joint_state_publisher,
             spawn_robot,
-            hector_mapping,
+            slam_toolbox,
             rviz2,
         ]
     )
