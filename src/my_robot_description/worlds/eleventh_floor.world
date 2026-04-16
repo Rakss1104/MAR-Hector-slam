@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="eleventh_floor">
+
+    <!-- ========================== PHYSICS ========================== -->
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- ========================== LIGHT ========================== -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- ========================== GROUND PLANE ========================== -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- ========================================================================
+         MAIN COLLEGE FLOOR (11th Floor)
+         Mesh exported from Blender
+    ======================================================================== -->
+    <model name="college_floor">
+      <static>true</static>
+      <pose>0 0 0.01 1.5708 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://my_robot_description/meshes/MainWallsFile.obj</uri>
+              <!-- Scaling factor if needed -->
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://my_robot_description/meshes/MainWallsFile.obj</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

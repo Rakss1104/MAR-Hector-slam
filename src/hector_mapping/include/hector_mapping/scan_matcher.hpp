@@ -20,23 +20,17 @@ namespace hector_mapping
 class ScanMatcher
 {
 public:
+  /** Transform a local-frame point by pose (x, y, theta). */
+  static Eigen::Vector2d transformPoint(const Eigen::Vector3d & pose,
+                                        const Eigen::Vector2d & pt);
+
   /**
    * Match scan endpoints (in world frame) against `map`.
-   *
-   * @param[in,out] pose  current best-guess (x, y, theta); updated in place
-   * @param map           the occupancy grid to match against
-   * @param endpoints     scan endpoints in the sensor's local frame
-   * @param iterations    max Gauss-Newton iterations (default 20)
-   * @return              final sum of matched probabilities
    */
   static double match(Eigen::Vector3d & pose,
                       const OccupancyGridMap & map,
                       const std::vector<Eigen::Vector2d> & endpoints,
                       int iterations = 20);
-
-  /** Transform a local-frame point by pose (x, y, theta). */
-  static Eigen::Vector2d transformPoint(const Eigen::Vector3d & pose,
-                                        const Eigen::Vector2d & pt);
 };
 
 }  // namespace hector_mapping
